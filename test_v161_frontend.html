@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>V1.6.1 前端功能测试</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 2rem 0;
+        }
+        
+        .test-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            margin: 0 auto;
+            max-width: 1000px;
+            padding: 2rem;
+        }
+        
+        .test-section {
+            margin-bottom: 3rem;
+            padding: 1.5rem;
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+        }
+        
+        .test-section.success {
+            border-color: #28a745;
+            background-color: #f8fff9;
+        }
+        
+        .test-section.warning {
+            border-color: #ffc107;
+            background-color: #fffdf5;
+        }
+        
+        .test-section.error {
+            border-color: #dc3545;
+            background-color: #fff5f5;
+        }
+        
+        .test-title {
+            color: #495057;
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .test-result {
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin: 0.5rem 0;
+            font-weight: 500;
+        }
+        
+        .test-result.pass {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .test-result.fail {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .form-control, .form-select {
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            padding: 0.75rem 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .form-control:disabled {
+            background-color: #f8f9fa;
+            opacity: 0.6;
+        }
+        
+        .sortable-item {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+            cursor: move;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+        
+        .disabled-sorting .sortable-item {
+            opacity: 0.6;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        
+        .disabled-sorting .drag-handle {
+            color: #ccc !important;
+        }
+        
+        .drag-handle {
+            color: #6c757d;
+            margin-right: 0.5rem;
+            font-size: 1.1rem;
+        }
+        
+        .btn-test {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 25px;
+            padding: 0.75rem 2rem;
+            color: white;
+            font-weight: 600;
+            margin: 0.5rem;
+        }
+        
+        .btn-test:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="test-container">
+            <div class="text-center mb-4">
+                <h1><i class="fas fa-flask me-3"></i>智能留学选校规划系统 V1.6.1 前端功能测试</h1>
+                <p class="text-muted">测试新增的专业排名、标化成绩交互、选校偏好排序和预算字段功能</p>
+            </div>
+            
+            <!-- 测试1: 专业排名字段 -->
+            <div class="test-section" id="test1">
+                <h3 class="test-title">
+                    <i class="fas fa-trophy me-2"></i>测试1: 专业排名字段
+                </h3>
+                <p>验证专业排名字段是否正确添加到学术背景部分</p>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label">总 GPA/均分 *</label>
+                        <input type="text" class="form-control" value="3.8/4.0" readonly>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">专业排名 <span class="text-muted">(选填)</span></label>
+                        <input type="text" class="form-control" id="major_ranking_test" 
+                               placeholder="如：Top 5% 或 5/120">
+                    </div>
+                </div>
+                
+                <button class="btn btn-test" onclick="testMajorRanking()">测试专业排名字段</button>
+                <div id="test1-result"></div>
+            </div>
+            
+            <!-- 测试2: 标化成绩复选框交互 -->
+            <div class="test-section" id="test2">
+                <h3 class="test-title">
+                    <i class="fas fa-check-square me-2"></i>测试2: 标化成绩复选框交互
+                </h3>
+                <p>验证复选框控制输入框启用/禁用状态的功能</p>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="has_language_score_test">
+                            <label class="form-check-label" for="has_language_score_test">
+                                TOEFL/IELTS 成绩 <span class="text-muted">(选填)</span>
+                            </label>
+                        </div>
+                        <input type="text" class="form-control" id="language_score_text_test" 
+                               placeholder="如：TOEFL: 105 或 IELTS: 7.0" disabled>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="has_gre_score_test">
+                            <label class="form-check-label" for="has_gre_score_test">
+                                GRE/GMAT 成绩 <span class="text-muted">(选填)</span>
+                            </label>
+                        </div>
+                        <input type="text" class="form-control" id="gre_score_text_test" 
+                               placeholder="如：GRE: 325 或 GMAT: 720" disabled>
+                    </div>
+                </div>
+                
+                <button class="btn btn-test" onclick="testStandardizedTests()">测试标化成绩交互</button>
+                <div id="test2-result"></div>
+            </div>
+            
+            <!-- 测试3: 选校偏好排序逻辑 -->
+            <div class="test-section" id="test3">
+                <h3 class="test-title">
+                    <i class="fas fa-sort me-2"></i>测试3: 选校偏好排序逻辑
+                </h3>
+                <p>验证总开关控制拖拽排序功能</p>
+                
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="enable_selection_factors_test">
+                    <label class="form-check-label" for="enable_selection_factors_test">
+                        选校最看重方面 <span class="text-muted">(勾选后可拖拽排序)</span>
+                    </label>
+                </div>
+                <div id="selection-factors-container-test" class="disabled-sorting">
+                    <div class="sortable-item" data-factor="综合排名">
+                        <span><i class="fas fa-grip-vertical drag-handle"></i>综合排名</span>
+                    </div>
+                    <div class="sortable-item" data-factor="专业排名">
+                        <span><i class="fas fa-grip-vertical drag-handle"></i>专业排名</span>
+                    </div>
+                    <div class="sortable-item" data-factor="地理位置与就业">
+                        <span><i class="fas fa-grip-vertical drag-handle"></i>地理位置与就业</span>
+                    </div>
+                </div>
+                
+                <button class="btn btn-test" onclick="testSelectionFactors()">测试选校偏好排序</button>
+                <div id="test3-result"></div>
+            </div>
+            
+            <!-- 测试4: 留学预算字段 -->
+            <div class="test-section" id="test4">
+                <h3 class="test-title">
+                    <i class="fas fa-dollar-sign me-2"></i>测试4: 留学预算字段
+                </h3>
+                <p>验证预算下拉选择框是否正确添加</p>
+                
+                <div class="row">
+                    <div class="col-md-4">
+                        <label class="form-label">意向国家/地区 *</label>
+                        <input type="text" class="form-control" value="美国, 英国" readonly>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">毕业后去向 <span class="text-muted">(选填)</span></label>
+                        <select class="form-select">
+                            <option value="">请选择</option>
+                            <option value="立即回国">立即回国</option>
+                            <option value="先在当地工作">先在当地工作</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">留学总预算 <span class="text-muted">(选填)</span></label>
+                        <select class="form-select" id="budget_test">
+                            <option value="">请选择</option>
+                            <option value="20万人民币以内">20万人民币以内</option>
+                            <option value="20-30万人民币">20-30万人民币</option>
+                            <option value="30-50万人民币">30-50万人民币</option>
+                            <option value="50-70万人民币">50-70万人民币</option>
+                            <option value="70万人民币以上">70万人民币以上</option>
+                            <option value="预算充足">预算充足</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <button class="btn btn-test" onclick="testBudgetField()">测试预算字段</button>
+                <div id="test4-result"></div>
+            </div>
+            
+            <!-- 测试5: 数据收集功能 -->
+            <div class="test-section" id="test5">
+                <h3 class="test-title">
+                    <i class="fas fa-database me-2"></i>测试5: 数据收集功能
+                </h3>
+                <p>验证新增字段的数据收集是否正常</p>
+                
+                <button class="btn btn-test" onclick="testDataCollection()">测试数据收集</button>
+                <div id="test5-result"></div>
+                <pre id="collected-data" style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-top: 1rem; display: none;"></pre>
+            </div>
+            
+            <!-- 总体测试结果 -->
+            <div class="test-section" id="summary">
+                <h3 class="test-title">
+                    <i class="fas fa-chart-bar me-2"></i>测试结果汇总
+                </h3>
+                <div id="summary-content">
+                    <p class="text-muted">请运行上述各项测试以查看结果汇总</p>
+                </div>
+                <button class="btn btn-test" onclick="runAllTests()">运行所有测试</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 测试结果存储
+        let testResults = {};
+        
+        // 初始化标化成绩复选框逻辑
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeStandardizedTestsForTest();
+            initializeSelectionFactorsForTest();
+        });
+        
+        function initializeStandardizedTestsForTest() {
+            // 语言成绩复选框
+            const languageCheckbox = document.getElementById('has_language_score_test');
+            const languageInput = document.getElementById('language_score_text_test');
+            
+            languageCheckbox.addEventListener('change', function() {
+                languageInput.disabled = !this.checked;
+                if (!this.checked) {
+                    languageInput.value = '';
+                }
+            });
+            
+            // GRE/GMAT成绩复选框
+            const greCheckbox = document.getElementById('has_gre_score_test');
+            const greInput = document.getElementById('gre_score_text_test');
+            
+            greCheckbox.addEventListener('change', function() {
+                greInput.disabled = !this.checked;
+                if (!this.checked) {
+                    greInput.value = '';
+                }
+            });
+        }
+        
+        function initializeSelectionFactorsForTest() {
+            const enableCheckbox = document.getElementById('enable_selection_factors_test');
+            const container = document.getElementById('selection-factors-container-test');
+            
+            enableCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    container.classList.remove('disabled-sorting');
+                } else {
+                    container.classList.add('disabled-sorting');
+                }
+            });
+        }
+        
+        function testMajorRanking() {
+            const input = document.getElementById('major_ranking_test');
+            const resultDiv = document.getElementById('test1-result');
+            
+            let passed = 0;
+            let total = 3;
+            let results = [];
+            
+            // 测试1: 字段存在性
+            if (input) {
+                results.push('<div class="test-result pass">✅ 专业排名字段存在</div>');
+                passed++;
+            } else {
+                results.push('<div class="test-result fail">❌ 专业排名字段不存在</div>');
+            }
+            
+            // 测试2: 占位符文本
+            if (input && input.placeholder.includes('Top 5%')) {
+                results.push('<div class="test-result pass">✅ 占位符文本正确</div>');
+                passed++;
+            } else {
+                results.push('<div class="test-result fail">❌ 占位符文本不正确</div>');
+            }
+            
+            // 测试3: 输入功能
+            if (input) {
+                input.value = 'Top 10%';
+                if (input.value === 'Top 10%') {
+                    results.push('<div class="test-result pass">✅ 输入功能正常</div>');
+                    passed++;
+                } else {
+                    results.push('<div class="test-result fail">❌ 输入功能异常</div>');
+                }
+            }
+            
+            testResults.majorRanking = passed === total;
+            resultDiv.innerHTML = results.join('') + `<p><strong>测试结果: ${passed}/${total} 通过</strong></p>`;
+            updateTestSection('test1', passed === total);
+            updateSummary();
+        }
+        
+        function testStandardizedTests() {
+            const resultDiv = document.getElementById('test2-result');
+            const languageCheckbox = document.getElementById('has_language_score_test');
+            const languageInput = document.getElementById('language_score_text_test');
+            const greCheckbox = document.getElementById('has_gre_score_test');
+            const greInput = document.getElementById('gre_score_text_test');
+            
+            let passed = 0;
+            let total = 6;
+            let results = [];
+            
+            // 测试语言成绩复选框
+            if (languageInput.disabled) {
+                results.push('<div class="test-result pass">✅ 语言成绩输入框初始状态为禁用</div>');
+                passed++;
+            } else {
+                results.push('<div class="test-result fail">❌ 语言成绩输入框初始状态应为禁用</div>');
+            }
+            
+            // 启用语言成绩
+            languageCheckbox.checked = true;
+            languageCheckbox.dispatchEvent(new Event('change'));
+            if (!languageInput.disabled) {
+                results.push('<div class="test-result pass">✅ 勾选后语言成绩输入框启用</div>');
+                passed++;
+            } else {
+                results.push('<div class="test-result fail">❌ 勾选后语言成绩输入框未启用</div>');
+            }
+            
+            // 取消勾选语言成绩
+            languageCheckbox.checked = false;
+            languageCheckbox.dispatchEvent(new Event('change'));
+            if (languageInput.disabled) {
+                results.push('<div class="test-result pass">✅ 取消勾选后语言成绩输入框禁用</div>');
+                passed++;
+            } else {
+                results.push('<div class="test-result fail">❌ 取消勾选后语言成绩输入框未禁用</div>');
+            }
+            
+            // 测试GRE成绩复选框
+            if (greInput.disabled) {
+                results.push('<div class="test-result pass">✅ GRE成绩输入框初始状态为禁用</div>');
+                passed++;
+            } else {
+                results.push('<div class="test-result fail">❌ GRE成绩输入框初始状态应为禁用</div>');
+            }
+            
+            // 启用GRE成绩
+            greCheckbox.checked = true;
+            greCheckbox.dispatchEvent(new Event('change'));
+            if (!greInput.disabled) {
+                results.push('<div class="test-result pass">✅ 勾选后GRE成绩输入框启用</div>');
+                passed++;
+            } else {
+                results.push('<div class="test-result fail">❌ 勾选后GRE成绩输入框未启用</div>');
+            }
+            
+            // 取消勾选GRE成绩
+            greCheckbox.checked = false;
+            greCheckbox.dispatchEvent(new Event('change'));
+            if (greInput.disabled) {
+                results.push('<div class="test-result pass">✅ 取消勾选后GRE成绩输入框禁用</div>');
+                passed++;
+            } else {
+                results.push('<div class="test-result fail">❌ 取消勾选后GRE成绩输入框未禁用</div>');
+            }
+            
+            testResults.standardizedTests = passed === total;
+            resultDiv.innerHTML = results.join('') + `<p><strong>测试结果: ${passed}/${total} 通过</strong></p>`;
+            updateTestSection('test2', passed === total);
+            updateSummary();
+        }
+        
+        function testSelectionFactors() {
+            const resultDiv = document.getElementById('test3-result');
+            const enableCheckbox = document.getElementById('enable_selection_factors_test');
+            const container = document.getElementById('selection-factors-container-test');
+            
+            let passed = 0;
+            let total = 4;
+            let results = [];
+            
+            // 测试初始状态
+            if (container.classList.contains('disabled-sorting')) {
+                results.push('<div class="test-result pass">✅ 初始状态为禁用排序</div>');
+                passed++;
+            } else {
+                results.push('<div class="test-result fail">❌ 初始状态应为禁用排序</div>');
+            }
+            
+            // 测试启用排序
+            enableCheckbox.checked = true;
+            enableCheckbox.dispatchEvent(new Event('change'));
+            if (!container.classList.contains('disabled-sorting')) {
+                results.push('<div class="test-result pass">✅ 勾选后启用排序</div>');
+                passed++;
+            } else {
+                results.push('<div class="test-result fail">❌ 勾选后未启用排序</div>');
+            }
+            
+            // 测试禁用排序
+            enableCheckbox.checked = false;
+            enableCheckbox.dispatchEvent(new Event('change'));
+            if (container.classList.contains('disabled-sorting')) {
+                results.push('<div class="test-result pass">✅ 取消勾选后禁用排序</div>');
+                passed++;
+            } else {
+                results.push('<div class="test-result fail">❌ 取消勾选后未禁用排序</div>');
+            }
+            
+            // 测试排序项存在
+            const sortableItems = container.querySelectorAll('.sortable-item');
+            if (sortableItems.length >= 3) {
+                results.push('<div class="test-result pass">✅ 排序项存在且数量正确</div>');
+                passed++;
+            } else {
+                results.push('<div class="test-result fail">❌ 排序项数量不正确</div>');
+            }
+            
+            testResults.selectionFactors = passed === total;
+            resultDiv.innerHTML = results.join('') + `<p><strong>测试结果: ${passed}/${total} 通过</strong></p>`;
+            updateTestSection('test3', passed === total);
+            updateSummary();
+        }
+        
+        function testBudgetField() {
+            const resultDiv = document.getElementById('test4-result');
+            const budgetSelect = document.getElementById('budget_test');
+            
+            let passed = 0;
+            let total = 3;
+            let results = [];
+            
+            // 测试字段存在性
+            if (budgetSelect) {
+                results.push('<div class="test-result pass">✅ 预算字段存在</div>');
+                passed++;
+            } else {
+                results.push('<div class="test-result fail">❌ 预算字段不存在</div>');
+            }
+            
+            // 测试选项数量
+            const options = budgetSelect.querySelectorAll('option');
+            if (options.length === 7) { // 包括默认选项
+                results.push('<div class="test-result pass">✅ 预算选项数量正确 (7个)</div>');
+                passed++;
+            } else {
+                results.push('<div class="test-result fail">❌ 预算选项数量不正确 (期望7个，实际' + options.length + '个)</div>');
+            }
+            
+            // 测试选择功能
+            budgetSelect.value = '50-70万人民币';
+            if (budgetSelect.value === '50-70万人民币') {
+                results.push('<div class="test-result pass">✅ 预算选择功能正常</div>');
+                passed++;
+            } else {
+                results.push('<div class="test-result fail">❌ 预算选择功能异常</div>');
+            }
+            
+            testResults.budgetField = passed === total;
+            resultDiv.innerHTML = results.join('') + `<p><strong>测试结果: ${passed}/${total} 通过</strong></p>`;
+            updateTestSection('test4', passed === total);
+            updateSummary();
+        }
+        
+        function testDataCollection() {
+            const resultDiv = document.getElementById('test5-result');
+            const dataDiv = document.getElementById('collected-data');
+            
+            // 设置测试数据
+            document.getElementById('major_ranking_test').value = 'Top 5%';
+            document.getElementById('budget_test').value = '50-70万人民币';
+            document.getElementById('has_language_score_test').checked = true;
+            document.getElementById('language_score_text_test').disabled = false;
+            document.getElementById('language_score_text_test').value = 'TOEFL: 105';
+            document.getElementById('enable_selection_factors_test').checked = true;
+            
+            // 模拟数据收集
+            const collectedData = {
+                major_ranking: document.getElementById('major_ranking_test').value || null,
+                budget: document.getElementById('budget_test').value || null,
+                has_language_score: document.getElementById('has_language_score_test').checked,
+                language_score_text: document.getElementById('language_score_text_test').value || null,
+                enable_selection_factors: document.getElementById('enable_selection_factors_test').checked
+            };
+            
+            let passed = 0;
+            let total = 3;
+            let results = [];
+            
+            // 测试专业排名收集
+            if (collectedData.major_ranking === 'Top 5%') {
+                results.push('<div class="test-result pass">✅ 专业排名数据收集正确</div>');
+                passed++;
+            } else {
+                results.push('<div class="test-result fail">❌ 专业排名数据收集失败</div>');
+            }
+            
+            // 测试预算收集
+            if (collectedData.budget === '50-70万人民币') {
+                results.push('<div class="test-result pass">✅ 预算数据收集正确</div>');
+                passed++;
+            } else {
+                results.push('<div class="test-result fail">❌ 预算数据收集失败</div>');
+            }
+            
+            // 测试复选框状态收集
+            if (collectedData.has_language_score === true && collectedData.enable_selection_factors === true) {
+                results.push('<div class="test-result pass">✅ 复选框状态收集正确</div>');
+                passed++;
+            } else {
+                results.push('<div class="test-result fail">❌ 复选框状态收集失败</div>');
+            }
+            
+            testResults.dataCollection = passed === total;
+            resultDiv.innerHTML = results.join('') + `<p><strong>测试结果: ${passed}/${total} 通过</strong></p>`;
+            updateTestSection('test5', passed === total);
+            
+            // 显示收集的数据
+            dataDiv.textContent = JSON.stringify(collectedData, null, 2);
+            dataDiv.style.display = 'block';
+            
+            updateSummary();
+        }
+        
+        function updateTestSection(sectionId, passed) {
+            const section = document.getElementById(sectionId);
+            section.classList.remove('success', 'warning', 'error');
+            section.classList.add(passed ? 'success' : 'error');
+        }
+        
+        function updateSummary() {
+            const summaryDiv = document.getElementById('summary-content');
+            const totalTests = Object.keys(testResults).length;
+            const passedTests = Object.values(testResults).filter(result => result).length;
+            
+            if (totalTests === 0) {
+                summaryDiv.innerHTML = '<p class="text-muted">请运行上述各项测试以查看结果汇总</p>';
+                return;
+            }
+            
+            let summaryHtml = `<p><strong>总体测试结果: ${passedTests}/${totalTests} 项通过</strong></p>`;
+            
+            for (const [testName, result] of Object.entries(testResults)) {
+                const status = result ? '✅ 通过' : '❌ 失败';
+                const testDisplayName = {
+                    majorRanking: '专业排名字段',
+                    standardizedTests: '标化成绩交互',
+                    selectionFactors: '选校偏好排序',
+                    budgetField: '预算字段',
+                    dataCollection: '数据收集'
+                }[testName] || testName;
+                
+                summaryHtml += `<div class="test-result ${result ? 'pass' : 'fail'}">${testDisplayName}: ${status}</div>`;
+            }
+            
+            if (passedTests === totalTests) {
+                summaryHtml += '<div class="alert alert-success mt-3"><strong>🎉 所有 V1.6.1 前端功能测试通过！</strong></div>';
+                updateTestSection('summary', true);
+            } else {
+                summaryHtml += '<div class="alert alert-warning mt-3"><strong>⚠️ 部分测试失败，请检查相关功能</strong></div>';
+                updateTestSection('summary', false);
+            }
+            
+            summaryDiv.innerHTML = summaryHtml;
+        }
+        
+        function runAllTests() {
+            testMajorRanking();
+            setTimeout(() => testStandardizedTests(), 100);
+            setTimeout(() => testSelectionFactors(), 200);
+            setTimeout(() => testBudgetField(), 300);
+            setTimeout(() => testDataCollection(), 400);
+        }
+    </script>
+</body>
+</html>

@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeSelectionFactors();
     initializeAutocomplete();
     initializeFormValidation();
+    initializeStandardizedTests(); // V1.6.1 新增
 });
 
 /**
@@ -326,39 +327,81 @@ function updateTargetMajorsHidden() {
 }
 
 /**
+ * V1.6.1 新增：初始化标化成绩复选框逻辑
+ */
+function initializeStandardizedTests() {
+    // 语言成绩复选框
+    const languageCheckbox = document.getElementById('has_language_score');
+    const languageInput = document.getElementById('language_score_text');
+    
+    if (languageCheckbox && languageInput) {
+        languageCheckbox.addEventListener('change', function() {
+            languageInput.disabled = !this.checked;
+            if (!this.checked) {
+                languageInput.value = '';
+            }
+        });
+    }
+    
+    // GRE/GMAT成绩复选框
+    const greCheckbox = document.getElementById('has_gre_score');
+    const greInput = document.getElementById('gre_score_text');
+    
+    if (greCheckbox && greInput) {
+        greCheckbox.addEventListener('change', function() {
+            greInput.disabled = !this.checked;
+            if (!this.checked) {
+                greInput.value = '';
+            }
+        });
+    }
+}
+
+/**
  * 初始化选校因素
  */
 function initializeSelectionFactors() {
     const container = document.getElementById('selection-factors-container');
     const hiddenInput = document.getElementById('school_selection_factors');
+    const enableCheckbox = document.getElementById('enable_selection_factors');
     
-    // 添加复选框事件监听器
-    const checkboxes = container.querySelectorAll('.factor-checkbox');
-    checkboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', updateSelectionFactors);
-    });
-    
-    // 使容器可排序
-    makeSortable(container, updateSelectionFactors);
+    // V1.6.1 更新：添加总开关逻辑
+    if (enableCheckbox) {
+        enableCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                container.classList.remove('disabled-sorting');
+                // 启用拖拽排序
+                makeSortable(container, updateSelectionFactors);
+            } else {
+                container.classList.add('disabled-sorting');
+                // 清空选校偏好数据
+                hiddenInput.value = '';
+            }
+        });
+    }
 }
 
 /**
- * 更新选校因素
+ * 更新选校因素 (V1.6.1 更新)
  */
 function updateSelectionFactors() {
     const container = document.getElementById('selection-factors-container');
-    const items = container.querySelectorAll('.sortable-item');
-    const selectedFactors = [];
-    
-    items.forEach(item => {
-        const checkbox = item.querySelector('.factor-checkbox');
-        if (checkbox.checked) {
-            selectedFactors.push(item.dataset.factor);
-        }
-    });
-    
+    const enableCheckbox = document.getElementById('enable_selection_factors');
     const hiddenInput = document.getElementById('school_selection_factors');
-    hiddenInput.value = JSON.stringify(selectedFactors);
+    
+    // 只有在启用排序时才收集数据
+    if (enableCheckbox && enableCheckbox.checked) {
+        const items = container.querySelectorAll('.sortable-item');
+        const selectedFactors = [];
+        
+        items.forEach(item => {
+            selectedFactors.push(item.dataset.factor);
+        });
+        
+        hiddenInput.value = JSON.stringify(selectedFactors);
+    } else {
+        hiddenInput.value = '';
+    }
 }
 
 /**
@@ -661,7 +704,11 @@ function collectFormData() {
         achievements: document.getElementById('achievements').value || null,
         target_majors: targetMajors,
         post_graduation_plan: document.getElementById('post_graduation_plan').value || null,
-        school_selection_factors: JSON.parse(document.getElementById('school_selection_factors').value || '[]')
+        school_selection_factors: JSON.parse(document.getElementById('school_selection_factors').value || '[]'),
+        
+        // V1.6.1 新增字段
+        major_ranking: document.getElementById('major_ranking').value || null,
+        budget: document.getElementById('budget').value || null
     };
 }
 

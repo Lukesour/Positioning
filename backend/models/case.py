@@ -87,6 +87,10 @@ class UserProfile(BaseModel):
     target_majors: Optional[List[str]] = None  # 意向申请专业（有序列表）
     post_graduation_plan: Optional[str] = None  # 毕业后去向
     school_selection_factors: Optional[List[str]] = None  # 选校最看重方面（有序列表）
+    
+    # --- V1.6.1 新增字段 ---
+    major_ranking: Optional[str] = None  # 专业排名，如："Top 5%" 或 "5/120"
+    budget: Optional[str] = None  # 留学总预算
 
 class SchoolRecommendation(BaseModel):
     """学校推荐模型"""

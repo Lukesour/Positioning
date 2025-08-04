@@ -52,12 +52,14 @@ class LLMService:
             "本科专业": user_profile.major,
             "总GPA": user_profile.gpa,
             "专业GPA": user_profile.major_gpa or "未提供",
+            "专业排名": user_profile.major_ranking or "未提供",  # V1.6.1 新增
             "语言成绩": f"{user_profile.language_test} {user_profile.language_score or 'N/A'}".strip(),
             "GRE成绩": user_profile.gre_score or "N/A",
             "海外交换经历": "有" if user_profile.exchange_experience else "无",
             "意向国家": ", ".join(user_profile.target_countries),
             "意向专业": ", ".join(user_profile.target_majors) if user_profile.target_majors else user_profile.target_major,
-            "毕业后规划": user_profile.post_graduation_plan or "未明确"
+            "毕业后规划": user_profile.post_graduation_plan or "未明确",
+            "留学预算": user_profile.budget or "未明确"  # V1.6.1 新增
         }
         
         # 构建实践背景信息
@@ -105,11 +107,11 @@ class LLMService:
 ## 1. 背景综合评估
 ### 优势 (Strengths)
 明确指出该生的核心竞争力在哪里。请特别关注：
-- 学术背景优势（院校层次、GPA、专业匹配度等）
+- 学术背景优势（院校层次、GPA、专业排名、专业匹配度等）
 - 实践经历亮点（科研、实习、项目成果等）
 - 海外经历加分项
 - 与目标专业的匹配度
-请结合具体数据和经历进行分析。
+请结合具体数据和经历进行分析，特别关注专业排名对申请的积极影响。
 
 ### 劣势 (Weaknesses)  
 明确指出该生的短板和需要改进的地方。请特别关注：
@@ -120,16 +122,16 @@ class LLMService:
 请与成功案例对比分析，指出具体的改进方向。
 
 ## 2. 选校梯度策略
-请根据学生的选校偏好（{', '.join(user_profile.school_selection_factors) if user_profile.school_selection_factors else '综合考虑'}）和成功案例，分为三个梯度：
+请根据学生的选校偏好（{', '.join(user_profile.school_selection_factors) if user_profile.school_selection_factors else '综合考虑'}）、预算情况（{user_profile.budget or '未明确'}）和成功案例，分为三个梯度：
 
 ### 冲刺院校 (Reach) - 推荐2-3所
-这些学校的录取要求略高于学生目前水平，但根据案例，有成功的可能性。请说明为什么可以冲刺，并引用具体案例佐证。
+这些学校的录取要求略高于学生目前水平，但根据案例，有成功的可能性。请说明为什么可以冲刺，并引用具体案例佐证。同时考虑预算因素。
 
 ### 核心院校 (Target) - 推荐3-4所  
-这些学校的录取要求与学生水平高度匹配，是申请的重点。请说明匹配度高的原因，并引用案例。
+这些学校的录取要求与学生水平高度匹配，是申请的重点。请说明匹配度高的原因，并引用案例。确保推荐的学校符合预算范围。
 
 ### 保底院校 (Safety) - 推荐2-3所
-这些学校的录取要求学生已基本达到，录取概率较大，用于确保有学可上。
+这些学校的录取要求学生已基本达到，录取概率较大，用于确保有学可上。优先考虑性价比高的选择。
 
 ## 3. 后续提升建议
 针对学生的劣势和毕业后规划（{user_profile.post_graduation_plan or '未明确'}），提出2-3条具体可行的提升建议。例如：
