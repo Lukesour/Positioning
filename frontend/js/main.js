@@ -7,10 +7,12 @@ let selectedCountries = [];
 let targetMajors = [];
 let practicalExperiences = [];
 let configOptions = {};
+let autocompleteOptions = {};
 
 // 页面加载完成后初始化
 document.addEventListener('DOMContentLoaded', function() {
     loadConfigOptions();
+    loadAutocompleteOptions();
     initializeForm();
     initializeCountrySelection();
     initializeExperienceManager();
@@ -33,6 +35,24 @@ async function loadConfigOptions() {
         configOptions = {
             popular_universities: ['北京大学', '清华大学', '复旦大学'],
             popular_majors: ['计算机科学', '软件工程', '数据科学']
+        };
+    }
+}
+
+/**
+ * 加载自动补全选项
+ */
+async function loadAutocompleteOptions() {
+    try {
+        const response = await fetch('/api/v1/autocomplete-options');
+        autocompleteOptions = await response.json();
+        console.log(`自动补全选项加载成功: ${autocompleteOptions.total_universities} 所院校, ${autocompleteOptions.total_majors} 个专业`);
+    } catch (error) {
+        console.error('加载自动补全选项失败:', error);
+        // 使用默认配置
+        autocompleteOptions = {
+            universities: ['北京大学', '清华大学', '复旦大学', '上海交通大学', '浙江大学'],
+            majors: ['计算机科学与技术', '软件工程', '电子信息工程', '机械工程', '金融学']
         };
     }
 }
@@ -345,48 +365,65 @@ function updateSelectionFactors() {
  * 初始化自动补全功能
  */
 function initializeAutocomplete() {
-    // 院校自动补全
-    setupAutocomplete('undergrad_school', 'school-suggestions', 'popular_universities');
+    // 院校自动补全 - 使用数据库数据
+    setupAutocomplete('undergrad_school', 'school-suggestions', 'universities', true);
     
-    // 专业自动补全
-    setupAutocomplete('major', 'major-suggestions', 'popular_majors');
-    setupAutocomplete('target-major-input', 'target-major-suggestions', 'popular_majors');
+    // 专业自动补全 - 使用数据库数据
+    setupAutocomplete('major', 'major-suggestions', 'majors', true);
+    setupAutocomplete('target-major-input', 'target-major-suggestions', 'majors', true);
 }
 
 /**
  * 设置自动补全
  */
-function setupAutocomplete(inputId, suggestionsId, dataKey) {
+function setupAutocomplete(inputId, suggestionsId, dataKey, useDatabase = false) {
     const input = document.getElementById(inputId);
     const suggestions = document.getElementById(suggestionsId);
     
     if (!input || !suggestions) return;
     
     input.addEventListener('input', function() {
-        const value = this.value.toLowerCase();
+        const value = this.value.toLowerCase().trim();
         if (value.length < 1) {
             suggestions.style.display = 'none';
             return;
         }
         
-        const data = configOptions[dataKey] || [];
+        // 选择数据源
+        let data = [];
+        if (useDatabase && autocompleteOptions[dataKey]) {
+            data = autocompleteOptions[dataKey];
+        } else if (configOptions[dataKey]) {
+            data = configOptions[dataKey];
+        }
+        
+        // 过滤匹配项
         const filtered = data.filter(item => 
             item.toLowerCase().includes(value)
-        ).slice(0, 10);
+        ).slice(0, 8); // 限制显示8个建议
         
         if (filtered.length === 0) {
             suggestions.style.display = 'none';
             return;
         }
         
+        // 构建建议列表
         suggestions.innerHTML = '';
         filtered.forEach(item => {
             const div = document.createElement('div');
             div.className = 'autocomplete-suggestion';
-            div.textContent = item;
+            
+            // 高亮匹配的文本
+            const regex = new RegExp(`(${value})`, 'gi');
+            const highlightedText = item.replace(regex, '<strong>$1</strong>');
+            div.innerHTML = highlightedText;
+            
             div.addEventListener('click', function() {
                 input.value = item;
                 suggestions.style.display = 'none';
+                
+                // 触发input事件以更新验证状态
+                input.dispatchEvent(new Event('input'));
                 
                 // 特殊处理意向专业输入
                 if (inputId === 'target-major-input') {
@@ -400,10 +437,44 @@ function setupAutocomplete(inputId, suggestionsId, dataKey) {
         suggestions.style.display = 'block';
     });
     
+    // 键盘导航支持
+    let selectedIndex = -1;
+    input.addEventListener('keydown', function(e) {
+        const suggestionItems = suggestions.querySelectorAll('.autocomplete-suggestion');
+        
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            selectedIndex = Math.min(selectedIndex + 1, suggestionItems.length - 1);
+            updateSelection(suggestionItems, selectedIndex);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            selectedIndex = Math.max(selectedIndex - 1, -1);
+            updateSelection(suggestionItems, selectedIndex);
+        } else if (e.key === 'Enter' && selectedIndex >= 0) {
+            e.preventDefault();
+            suggestionItems[selectedIndex].click();
+        } else if (e.key === 'Escape') {
+            suggestions.style.display = 'none';
+            selectedIndex = -1;
+        }
+    });
+    
+    // 更新选中状态
+    function updateSelection(items, index) {
+        items.forEach((item, i) => {
+            if (i === index) {
+                item.classList.add('active');
+            } else {
+                item.classList.remove('active');
+            }
+        });
+    }
+    
     // 点击外部隐藏建议
     document.addEventListener('click', function(e) {
         if (!input.contains(e.target) && !suggestions.contains(e.target)) {
             suggestions.style.display = 'none';
+            selectedIndex = -1;
         }
     });
 }
@@ -414,10 +485,18 @@ function setupAutocomplete(inputId, suggestionsId, dataKey) {
 function makeSortable(container, callback) {
     let draggedElement = null;
     
+    // 确保所有sortable-item都有draggable属性
+    const items = container.querySelectorAll('.sortable-item');
+    items.forEach(item => {
+        item.draggable = true;
+        item.style.cursor = 'move';
+    });
+    
     container.addEventListener('dragstart', function(e) {
         if (e.target.classList.contains('sortable-item')) {
             draggedElement = e.target;
             e.target.style.opacity = '0.5';
+            e.dataTransfer.effectAllowed = 'move';
         }
     });
     
@@ -430,21 +509,35 @@ function makeSortable(container, callback) {
     
     container.addEventListener('dragover', function(e) {
         e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+    });
+    
+    container.addEventListener('dragenter', function(e) {
+        e.preventDefault();
     });
     
     container.addEventListener('drop', function(e) {
         e.preventDefault();
-        if (draggedElement && e.target.classList.contains('sortable-item')) {
-            const rect = e.target.getBoundingClientRect();
-            const midpoint = rect.top + rect.height / 2;
-            
-            if (e.clientY < midpoint) {
-                container.insertBefore(draggedElement, e.target);
-        } else {
-                container.insertBefore(draggedElement, e.target.nextSibling);
+        
+        if (draggedElement && e.target !== draggedElement) {
+            // 找到最近的sortable-item
+            let dropTarget = e.target;
+            while (dropTarget && !dropTarget.classList.contains('sortable-item')) {
+                dropTarget = dropTarget.parentElement;
             }
             
-            if (callback) callback();
+            if (dropTarget && dropTarget.classList.contains('sortable-item')) {
+                const rect = dropTarget.getBoundingClientRect();
+                const midpoint = rect.top + rect.height / 2;
+                
+                if (e.clientY < midpoint) {
+                    container.insertBefore(draggedElement, dropTarget);
+                } else {
+                    container.insertBefore(draggedElement, dropTarget.nextSibling);
+                }
+                
+                if (callback) callback();
+            }
         }
     });
 }
@@ -507,8 +600,10 @@ function validateForm() {
     // 更新提交按钮状态
     if (isValid) {
         submitBtn.classList.add('enabled');
+        submitBtn.disabled = false;
     } else {
         submitBtn.classList.remove('enabled');
+        submitBtn.disabled = true;
     }
     
     return isValid;

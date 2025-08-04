@@ -170,6 +170,56 @@ async def get_config_options():
         ]
     }
 
+@app.get("/api/v1/autocomplete-options")
+async def get_autocomplete_options(db: Session = Depends(get_db)):
+    """获取自动补全选项（从数据库中提取院校和专业列表）"""
+    try:
+        from backend.models.case import Case
+        from sqlalchemy import distinct
+        
+        # 查询所有不重复的本科院校
+        universities_query = db.query(distinct(Case.undergrad_school)).filter(
+            Case.undergrad_school.isnot(None),
+            Case.undergrad_school != ''
+        ).all()
+        universities = [row[0] for row in universities_query if row[0]]
+        
+        # 查询所有不重复的本科专业
+        majors_query = db.query(distinct(Case.undergrad_major)).filter(
+            Case.undergrad_major.isnot(None),
+            Case.undergrad_major != ''
+        ).all()
+        majors = [row[0] for row in majors_query if row[0]]
+        
+        # 按字母顺序排序
+        universities.sort()
+        majors.sort()
+        
+        logger.info(f"返回自动补全选项: {len(universities)} 所院校, {len(majors)} 个专业")
+        
+        return {
+            "universities": universities,
+            "majors": majors,
+            "total_universities": len(universities),
+            "total_majors": len(majors)
+        }
+        
+    except Exception as e:
+        logger.error(f"获取自动补全选项失败: {e}")
+        # 返回默认选项
+        return {
+            "universities": [
+                "北京大学", "清华大学", "复旦大学", "上海交通大学", "浙江大学",
+                "中国科学技术大学", "南京大学", "华中科技大学", "中山大学", "西安交通大学"
+            ],
+            "majors": [
+                "计算机科学与技术", "软件工程", "电子信息工程", "机械工程", "土木工程",
+                "金融学", "会计学", "国际经济与贸易", "英语", "法学"
+            ],
+            "total_universities": 10,
+            "total_majors": 10
+        }
+
 if __name__ == "__main__":
     import uvicorn
     from config.settings import APP_HOST, APP_PORT
