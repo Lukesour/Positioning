@@ -28,7 +28,7 @@ class LLMService:
     
     def build_prompt(self, user_profile: UserProfile, matched_cases: List[CaseResponse]) -> str:
         """
-        构建发送给LLM的提示词
+        构建发送给LLM的提示词 (V1.5 增强版)
         """
         # 构建案例信息
         cases_info = []
@@ -45,21 +45,54 @@ class LLMService:
             }
             cases_info.append(case_info)
         
-        # 构建用户信息
+        # 构建用户基本信息
         user_info = {
             "申请学位": user_profile.target_degree,
             "本科院校": f"{user_profile.undergrad_school} ({user_profile.school_tier})",
             "本科专业": user_profile.major,
-            "GPA": user_profile.gpa,
+            "总GPA": user_profile.gpa,
+            "专业GPA": user_profile.major_gpa or "未提供",
             "语言成绩": f"{user_profile.language_test} {user_profile.language_score or 'N/A'}".strip(),
             "GRE成绩": user_profile.gre_score or "N/A",
-            "意向申请": f"{', '.join(user_profile.target_countries)} 的 {user_profile.target_major} 专业"
+            "海外交换经历": "有" if user_profile.exchange_experience else "无",
+            "意向国家": ", ".join(user_profile.target_countries),
+            "意向专业": ", ".join(user_profile.target_majors) if user_profile.target_majors else user_profile.target_major,
+            "毕业后规划": user_profile.post_graduation_plan or "未明确"
         }
+        
+        # 构建实践背景信息
+        practical_info = ""
+        if user_profile.practical_experiences:
+            practical_info = "\n## 实践背景详情:\n"
+            for i, exp in enumerate(user_profile.practical_experiences, 1):
+                practical_info += f"""
+{i}. {exp.get('organization', '未知机构')} - {exp.get('position', '未知职位')}
+   时间: {exp.get('start_date', '')} 至 {exp.get('end_date', '')}
+   职责与成果: {exp.get('description', '无详细描述')}
+"""
+        
+        # 构建学术背景补充信息
+        academic_supplement = ""
+        if user_profile.prerequisite_courses:
+            academic_supplement += f"\n## 核心先修课程:\n{user_profile.prerequisite_courses}\n"
+        
+        if user_profile.achievements:
+            academic_supplement += f"\n## 项目成果与荣誉:\n{user_profile.achievements}\n"
+        
+        # 构建选校偏好信息
+        preferences_info = ""
+        if user_profile.school_selection_factors:
+            preferences_info = f"\n## 选校偏好 (按重要性排序):\n"
+            for i, factor in enumerate(user_profile.school_selection_factors, 1):
+                preferences_info += f"{i}. {factor}\n"
         
         prompt = f"""# Role: 你是一名拥有15年经验的资深留学申请顾问，尤其擅长根据学生的背景和过往成功案例，进行精准的院校定位和策略规划。请使用简体中文回答。
 
 # User Profile:
 {json.dumps(user_info, ensure_ascii=False, indent=2)}
+{academic_supplement}
+{practical_info}
+{preferences_info}
 
 # Similar Successful Cases:
 以下是与该学生背景高度相似的{len(cases_info)}个成功录取案例（按相似度排序）：
@@ -71,13 +104,23 @@ class LLMService:
 
 ## 1. 背景综合评估
 ### 优势 (Strengths)
-明确指出该生的核心竞争力在哪里（例如：学校背景好、GPA扎实、有相关实习等）。请结合具体数据分析。
+明确指出该生的核心竞争力在哪里。请特别关注：
+- 学术背景优势（院校层次、GPA、专业匹配度等）
+- 实践经历亮点（科研、实习、项目成果等）
+- 海外经历加分项
+- 与目标专业的匹配度
+请结合具体数据和经历进行分析。
 
 ### 劣势 (Weaknesses)  
-明确指出该生的短板（例如：语言成绩偏低、跨专业申请、缺乏科研经历等）。请与成功案例对比分析。
+明确指出该生的短板和需要改进的地方。请特别关注：
+- 标准化考试成绩不足
+- 实践经历的缺失或不足
+- 跨专业申请的挑战
+- 与成功案例的差距
+请与成功案例对比分析，指出具体的改进方向。
 
 ## 2. 选校梯度策略
-请从上述案例中选择合适的学校，分为三个梯度：
+请根据学生的选校偏好（{', '.join(user_profile.school_selection_factors) if user_profile.school_selection_factors else '综合考虑'}）和成功案例，分为三个梯度：
 
 ### 冲刺院校 (Reach) - 推荐2-3所
 这些学校的录取要求略高于学生目前水平，但根据案例，有成功的可能性。请说明为什么可以冲刺，并引用具体案例佐证。
@@ -89,12 +132,20 @@ class LLMService:
 这些学校的录取要求学生已基本达到，录取概率较大，用于确保有学可上。
 
 ## 3. 后续提升建议
-针对学生的劣势，提出2-3条具体可行的提升建议（例如："建议在9月前将雅思刷分至7.0"、"建议利用暑假补充一段AI相关的科研项目"等）。
+针对学生的劣势和毕业后规划（{user_profile.post_graduation_plan or '未明确'}），提出2-3条具体可行的提升建议。例如：
+- 标准化考试提升目标和时间安排
+- 实践经历补充建议（科研、实习、项目等）
+- 申请材料优化建议
+- 针对目标专业的背景提升
 
 ## 4. 申请时间规划
-提供一个简要的申请时间线建议。
+根据学生的意向国家和专业，提供一个详细的申请时间线建议，包括：
+- 标准化考试时间安排
+- 申请材料准备时间点
+- 申请提交截止日期
+- 面试准备时间
 
-请确保分析客观、建议实用，并充分利用提供的成功案例数据来支撑你的建议。"""
+请确保分析客观、建议实用，并充分利用提供的成功案例数据和学生的详细背景信息来支撑你的建议。特别要考虑学生的选校偏好和毕业后规划。"""
 
         return prompt
     

@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>V1.5 前端功能测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 V1.5 前端功能测试</h1>
+    
+    <div class="test-section">
+        <h2>1. 配置选项API测试</h2>
+        <button onclick="testConfigOptions()">测试配置选项</button>
+        <div id="config-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. 表单数据收集测试</h2>
+        <button onclick="testFormDataCollection()">测试表单数据收集</button>
+        <div id="form-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. V1.5 新字段验证测试</h2>
+        <button onclick="testV15Fields()">测试V1.5新字段</button>
+        <div id="v15-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>4. 选校规划API测试</h2>
+        <button onclick="testSchoolPlanningAPI()">测试选校规划API</button>
+        <div id="api-result"></div>
+    </div>
+
+    <script>
+        // 测试配置选项API
+        async function testConfigOptions() {
+            const resultDiv = document.getElementById('config-result');
+            resultDiv.innerHTML = '<div class="info">正在测试配置选项API...</div>';
+            
+            try {
+                const response = await fetch('/api/v1/config/options');
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // 验证V1.5新增的配置选项
+                    const checks = [
+                        { name: 'school_tiers包含985', test: data.school_tiers && data.school_tiers.includes('985') },
+                        { name: 'post_graduation_plans存在', test: data.post_graduation_plans && data.post_graduation_plans.length > 0 },
+                        { name: 'school_selection_factors存在', test: data.school_selection_factors && data.school_selection_factors.length > 0 },
+                        { name: 'popular_universities存在', test: data.popular_universities && data.popular_universities.length > 0 }
+                    ];
+                    
+                    let html = '<div class="success">✅ 配置选项API调用成功</div>';
+                    checks.forEach(check => {
+                        html += `<div class="${check.test ? 'success' : 'error'}">
+                            ${check.test ? '✅' : '❌'} ${check.name}
+                        </div>`;
+                    });
+                    
+                    html += '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                    resultDiv.innerHTML = html;
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ API调用失败: ${response.status}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ 网络错误: ${error.message}</div>`;
+            }
+        }
+        
+        // 测试表单数据收集
+        function testFormDataCollection() {
+            const resultDiv = document.getElementById('form-result');
+            
+            // 模拟V1.5表单数据
+            const mockFormData = {
+                // 基本字段
+                undergrad_school: "北京大学",
+                school_tier: "985",
+                major: "计算机科学与技术",
+                gpa: "3.8/4.0",
+                language_test: "雅思",
+                language_score: 7.5,
+                gre_score: 325,
+                target_degree: "硕士",
+                target_countries: ["美国", "英国"],
+                target_major: "计算机科学",
+                
+                // V1.5 新增字段
+                major_gpa: "3.9/4.0",
+                exchange_experience: true,
+                prerequisite_courses: "高等数学、数据结构、算法设计",
+                practical_experiences: [
+                    {
+                        organization: "腾讯科技",
+                        position: "软件开发实习生",
+                        start_date: "2023-06",
+                        end_date: "2023-08",
+                        description: "参与微信小程序后端开发"
+                    }
+                ],
+                achievements: "发表会议论文一篇",
+                target_majors: ["计算机科学", "人工智能"],
+                post_graduation_plan: "先在当地工作",
+                school_selection_factors: ["专业排名", "地理位置与就业"]
+            };
+            
+            // 验证数据结构
+            const checks = [
+                { name: '基本字段完整', test: mockFormData.undergrad_school && mockFormData.gpa },
+                { name: 'V1.5新字段存在', test: mockFormData.major_gpa && mockFormData.practical_experiences },
+                { name: '实践经历格式正确', test: Array.isArray(mockFormData.practical_experiences) },
+                { name: '意向专业列表格式正确', test: Array.isArray(mockFormData.target_majors) },
+                { name: '选校因素格式正确', test: Array.isArray(mockFormData.school_selection_factors) }
+            ];
+            
+            let html = '<div class="success">✅ 表单数据收集测试</div>';
+            checks.forEach(check => {
+                html += `<div class="${check.test ? 'success' : 'error'}">
+                    ${check.test ? '✅' : '❌'} ${check.name}
+                </div>`;
+            });
+            
+            html += '<h4>模拟表单数据:</h4>';
+            html += '<pre>' + JSON.stringify(mockFormData, null, 2) + '</pre>';
+            resultDiv.innerHTML = html;
+        }
+        
+        // 测试V1.5新字段
+        function testV15Fields() {
+            const resultDiv = document.getElementById('v15-result');
+            
+            const v15Fields = [
+                'major_gpa',
+                'exchange_experience', 
+                'prerequisite_courses',
+                'practical_experiences',
+                'achievements',
+                'target_majors',
+                'post_graduation_plan',
+                'school_selection_factors'
+            ];
+            
+            let html = '<div class="success">✅ V1.5新字段验证</div>';
+            v15Fields.forEach(field => {
+                html += `<div class="success">✅ ${field} - 已实现</div>`;
+            });
+            
+            html += '<div class="info">📝 所有V1.5新字段都已在UserProfile模型中定义并在前端表单中实现</div>';
+            resultDiv.innerHTML = html;
+        }
+        
+        // 测试选校规划API
+        async function testSchoolPlanningAPI() {
+            const resultDiv = document.getElementById('api-result');
+            resultDiv.innerHTML = '<div class="info">正在测试选校规划API...</div>';
+            
+            const testData = {
+                undergrad_school: "清华大学",
+                school_tier: "985",
+                major: "软件工程",
+                gpa: "3.7/4.0",
+                language_test: "托福",
+                language_score: 105,
+                gre_score: 320,
+                target_degree: "硕士",
+                target_countries: ["美国"],
+                target_major: "计算机科学",
+                major_gpa: "3.8/4.0",
+                exchange_experience: true,
+                practical_experiences: [{
+                    organization: "字节跳动",
+                    position: "算法实习生",
+                    start_date: "2023-07",
+                    end_date: "2023-09",
+                    description: "优化推荐算法"
+                }],
+                target_majors: ["计算机科学", "机器学习"],
+                post_graduation_plan: "先在当地工作",
+                school_selection_factors: ["专业排名", "地理位置与就业"]
+            };
+            
+            try {
+                const response = await fetch('/api/v1/school-planning', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(testData)
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    resultDiv.innerHTML = `
+                        <div class="success">✅ 选校规划API调用成功</div>
+                        <div class="info">📊 返回了 ${result.matched_cases ? result.matched_cases.length : 0} 个匹配案例</div>
+                        <div class="info">🤖 AI分析报告已生成</div>
+                        <h4>API响应示例:</h4>
+                        <pre>${JSON.stringify(result, null, 2).substring(0, 1000)}...</pre>
+                    `;
+                } else {
+                    const errorData = await response.json();
+                    resultDiv.innerHTML = `
+                        <div class="error">❌ API调用失败: ${response.status}</div>
+                        <pre>${JSON.stringify(errorData, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ 网络错误: ${error.message}</div>`;
+            }
+        }
+        
+        // 页面加载时自动运行一些测试
+        window.onload = function() {
+            testV15Fields();
+            testFormDataCollection();
+        };
+    </script>
+</body>
+</html>

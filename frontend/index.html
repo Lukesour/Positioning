@@ -146,6 +146,157 @@
             margin: 1rem 0;
             border: 1px solid #f5c6cb;
         }
+        
+        /* V1.5 新增样式 */
+        .form-section-header {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 1.5rem;
+            margin: -2rem -2rem 2rem -2rem;
+            border-radius: 15px 15px 0 0;
+            border-bottom: 3px solid #667eea;
+        }
+        
+        .form-section-title {
+            color: #495057;
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin: 0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .form-section-subtitle {
+            color: #6c757d;
+            font-size: 0.95rem;
+            margin: 0.5rem 0 0 0;
+        }
+        
+        .form-section-content {
+            padding: 0 2rem 2rem 2rem;
+            margin: -2rem;
+        }
+        
+        .dynamic-item {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            position: relative;
+        }
+        
+        .dynamic-item .remove-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+        
+        .add-item-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .add-item-btn:hover {
+            background: #218838;
+            transform: translateY(-1px);
+        }
+        
+        .sortable-item {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+            cursor: move;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .sortable-item:hover {
+            background: #e9ecef;
+        }
+        
+        .drag-handle {
+            color: #6c757d;
+            margin-right: 0.5rem;
+        }
+        
+        .autocomplete-container {
+            position: relative;
+        }
+        
+        .autocomplete-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .autocomplete-suggestion {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            border-bottom: 1px solid #f8f9fa;
+        }
+        
+        .autocomplete-suggestion:hover,
+        .autocomplete-suggestion.active {
+            background: #f8f9fa;
+        }
+        
+        .submit-btn-container {
+            text-align: center;
+            padding: 2rem;
+            background: #f8f9fa;
+            margin: 2rem -2rem -2rem -2rem;
+            border-radius: 0 0 15px 15px;
+        }
+        
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 25px;
+            padding: 1rem 3rem;
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        .submit-btn.enabled {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        .submit-btn.enabled:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
     </style>
 </head>
 <body>
@@ -160,110 +311,227 @@
             <!-- 表单部分 -->
             <div class="form-section" id="formSection">
                 <form id="schoolPlanningForm">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label class="form-label">就读/毕业院校 *</label>
-                                <input type="text" class="form-control" id="undergrad_school" required 
-                                       placeholder="如：北京大学">
+                    
+                    <!-- 第一部分：学术背景 -->
+                    <div class="form-section-header">
+                        <h3 class="form-section-title">
+                            <i class="fas fa-graduation-cap me-3"></i>学术背景 (Academic Profile)
+                        </h3>
+                        <p class="form-section-subtitle">请填写您的教育背景和学术成绩信息</p>
+                    </div>
+                    <div class="form-section-content">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">本科/最高学历就读院校 *</label>
+                                    <div class="autocomplete-container">
+                                        <input type="text" class="form-control" id="undergrad_school" required 
+                                               placeholder="如：北京大学" autocomplete="off">
+                                        <div class="autocomplete-suggestions" id="school-suggestions"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">院校层次/档次 *</label>
+                                    <select class="form-select" id="school_tier" required>
+                                        <option value="">请选择</option>
+                                        <option value="985">985</option>
+                                        <option value="211">211</option>
+                                        <option value="双一流">双一流</option>
+                                        <option value="普通一本">普通一本</option>
+                                        <option value="普通二本">普通二本</option>
+                                        <option value="海外院校">海外院校</option>
+                                        <option value="其他">其他</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label class="form-label">院校层次 *</label>
-                                <select class="form-select" id="school_tier" required>
-                                    <option value="">请选择</option>
-                                    <option value="985院校">985院校</option>
-                                    <option value="211院校">211院校</option>
-                                    <option value="双非院校">双非院校</option>
-                                    <option value="海外院校">海外院校</option>
-                                </select>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">所学专业 *</label>
+                                    <div class="autocomplete-container">
+                                        <input type="text" class="form-control" id="major" required 
+                                               placeholder="如：计算机科学与技术" autocomplete="off">
+                                        <div class="autocomplete-suggestions" id="major-suggestions"></div>
+                                    </div>
+                                </div>
                             </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">总 GPA/均分 *</label>
+                                    <input type="text" class="form-control" id="gpa" required 
+                                           placeholder="如：3.7/4.0 或 88/100 或 Top 5%">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">专业 GPA/均分</label>
+                                    <input type="text" class="form-control" id="major_gpa" 
+                                           placeholder="如：3.8/4.0 或 90/100 或 Top 3%">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">海外交换/访学经历</label>
+                                    <select class="form-select" id="exchange_experience">
+                                        <option value="false">无</option>
+                                        <option value="true">有</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-label">TOEFL/IELTS 成绩</label>
+                                    <input type="text" class="form-control" id="language_score_text" 
+                                           placeholder="如：TOEFL: 105 或 IELTS: 7.0">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-label">GRE/GMAT 成绩</label>
+                                    <input type="text" class="form-control" id="gre_score_text" 
+                                           placeholder="如：GRE: 325 或 GMAT: 720">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-label">申请学位 *</label>
+                                    <select class="form-select" id="target_degree" required>
+                                        <option value="">请选择</option>
+                                        <option value="硕士">硕士</option>
+                                        <option value="博士">博士</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">核心先修课程</label>
+                            <textarea class="form-control" id="prerequisite_courses" rows="3" 
+                                      placeholder="若跨专业申请，请填写与目标专业相关的核心课程，如高等数学、数据结构、线性代数等。"></textarea>
                         </div>
                     </div>
                     
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label class="form-label">就读专业 *</label>
-                                <input type="text" class="form-control" id="major" required 
-                                       placeholder="如：计算机科学与技术">
+                    <!-- 第二部分：实践背景 -->
+                    <div class="form-section-header">
+                        <h3 class="form-section-title">
+                            <i class="fas fa-briefcase me-3"></i>实践背景 (Practical Experience)
+                        </h3>
+                        <p class="form-section-subtitle">请填写您的科研、实习、工作经历和项目成果</p>
+                    </div>
+                    <div class="form-section-content">
+                        <div class="form-group">
+                            <label class="form-label">科研/实习/工作经历</label>
+                            <div id="experiences-container">
+                                <!-- 动态添加的经历项目将在这里显示 -->
                             </div>
+                            <button type="button" class="add-item-btn" id="add-experience-btn">
+                                <i class="fas fa-plus me-2"></i>添加经历
+                            </button>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label class="form-label">GPA (平均成绩) *</label>
-                                <input type="text" class="form-control" id="gpa" required 
-                                       placeholder="如：3.5/4.0 或 88/100">
-                            </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">项目成果（论文/专利等）</label>
+                            <textarea class="form-control" id="achievements" rows="4" 
+                                      placeholder="请在此处列出您的论文、专利、重要项目报告等成果。"></textarea>
                         </div>
                     </div>
                     
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label class="form-label">语言考试类型</label>
-                                <select class="form-select" id="language_test">
-                                    <option value="暂无">暂无</option>
-                                    <option value="雅思">雅思 (IELTS)</option>
-                                    <option value="托福">托福 (TOEFL)</option>
-                                    <option value="多邻国">多邻国 (Duolingo)</option>
-                                </select>
+                    <!-- 第三部分：申请意向与偏好 -->
+                    <div class="form-section-header">
+                        <h3 class="form-section-title">
+                            <i class="fas fa-target me-3"></i>申请意向与偏好 (Intentions & Preferences)
+                        </h3>
+                        <p class="form-section-subtitle">请填写您的申请目标和选校偏好</p>
+                    </div>
+                    <div class="form-section-content">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">意向国家/地区 * (可多选)</label>
+                                    <div id="countries-container">
+                                        <span class="country-tag" data-country="美国">美国</span>
+                                        <span class="country-tag" data-country="英国">英国</span>
+                                        <span class="country-tag" data-country="新加坡">新加坡</span>
+                                        <span class="country-tag" data-country="香港">香港</span>
+                                        <span class="country-tag" data-country="加拿大">加拿大</span>
+                                        <span class="country-tag" data-country="澳大利亚">澳大利亚</span>
+                                        <span class="country-tag" data-country="德国">德国</span>
+                                        <span class="country-tag" data-country="法国">法国</span>
+                                    </div>
+                                    <input type="hidden" id="target_countries" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">毕业后去向</label>
+                                    <select class="form-select" id="post_graduation_plan">
+                                        <option value="">请选择</option>
+                                        <option value="立即回国">立即回国</option>
+                                        <option value="先在当地工作">先在当地工作</option>
+                                        <option value="不确定">不确定</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label class="form-label">语言成绩</label>
-                                <input type="number" class="form-control" id="language_score" 
-                                       placeholder="如：7.0" step="0.1">
+                        
+                        <div class="form-group">
+                            <label class="form-label">意向申请专业 * (可添加1-5个，拖拽排序)</label>
+                            <div class="autocomplete-container">
+                                <input type="text" class="form-control" id="target-major-input" 
+                                       placeholder="输入专业名称，如：计算机科学" autocomplete="off">
+                                <div class="autocomplete-suggestions" id="target-major-suggestions"></div>
                             </div>
+                            <div id="target-majors-list" class="mt-2">
+                                <!-- 已选择的专业将在这里显示 -->
+                            </div>
+                            <input type="hidden" id="target_majors" required>
                         </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label class="form-label">GRE/GMAT 成绩</label>
-                                <input type="number" class="form-control" id="gre_score" 
-                                       placeholder="如：320">
+                        
+                        <div class="form-group">
+                            <label class="form-label">选校最看重方面 (按重要性排序，可拖拽调整)</label>
+                            <div id="selection-factors-container">
+                                <div class="sortable-item" data-factor="综合排名">
+                                    <span><i class="fas fa-grip-vertical drag-handle"></i>综合排名</span>
+                                    <input type="checkbox" class="factor-checkbox" value="综合排名">
+                                </div>
+                                <div class="sortable-item" data-factor="专业排名">
+                                    <span><i class="fas fa-grip-vertical drag-handle"></i>专业排名</span>
+                                    <input type="checkbox" class="factor-checkbox" value="专业排名">
+                                </div>
+                                <div class="sortable-item" data-factor="地理位置与就业">
+                                    <span><i class="fas fa-grip-vertical drag-handle"></i>地理位置与就业</span>
+                                    <input type="checkbox" class="factor-checkbox" value="地理位置与就业">
+                                </div>
+                                <div class="sortable-item" data-factor="学费与性价比">
+                                    <span><i class="fas fa-grip-vertical drag-handle"></i>学费与性价比</span>
+                                    <input type="checkbox" class="factor-checkbox" value="学费与性价比">
+                                </div>
+                                <div class="sortable-item" data-factor="教授与科研实力">
+                                    <span><i class="fas fa-grip-vertical drag-handle"></i>教授与科研实力</span>
+                                    <input type="checkbox" class="factor-checkbox" value="教授与科研实力">
+                                </div>
+                                <div class="sortable-item" data-factor="校园文化">
+                                    <span><i class="fas fa-grip-vertical drag-handle"></i>校园文化</span>
+                                    <input type="checkbox" class="factor-checkbox" value="校园文化">
+                                </div>
                             </div>
+                            <input type="hidden" id="school_selection_factors">
                         </div>
                     </div>
                     
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label class="form-label">申请学位 *</label>
-                                <select class="form-select" id="target_degree" required>
-                                    <option value="">请选择</option>
-                                    <option value="硕士">硕士</option>
-                                    <option value="博士">博士</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label class="form-label">意向专业 *</label>
-                                <input type="text" class="form-control" id="target_major" required 
-                                       placeholder="如：计算机科学">
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">意向国家/地区 * (可多选)</label>
-                        <div id="countries-container">
-                            <span class="country-tag" data-country="英国">英国</span>
-                            <span class="country-tag" data-country="香港">香港</span>
-                            <span class="country-tag" data-country="新加坡">新加坡</span>
-                            <span class="country-tag" data-country="美国">美国</span>
-                            <span class="country-tag" data-country="澳大利亚">澳大利亚</span>
-                            <span class="country-tag" data-country="加拿大">加拿大</span>
-                            <span class="country-tag" data-country="德国">德国</span>
-                            <span class="country-tag" data-country="法国">法国</span>
-                        </div>
-                        <input type="hidden" id="target_countries" required>
-                    </div>
-                    
-                    <div class="text-center mt-4">
-                        <button type="submit" class="btn btn-primary">
+                    <!-- 提交按钮 -->
+                    <div class="submit-btn-container">
+                        <button type="submit" class="submit-btn" id="submit-btn">
                             <i class="fas fa-magic me-2"></i>生成我的选校报告
                         </button>
                     </div>
